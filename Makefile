@@ -10,7 +10,7 @@ OPTIONS_LINK_RELEASE=-O2 -fsigned-char -lm -ldl -lrt -lpthread -lssl -lcrypto -l
 
 HEADERS_NATIVELIB=nativelib/nativelib_src/nativelib.h
 
-OBJECTS_NATIVELIB=obj/obj/linux/nativelib.o
+OBJECTS_NATIVELIB=obj/obj/unix/nativelib.o
 
 ifeq ($(DEBUG),YES)
 	OPTIONS_COMPILE=$(OPTIONS_COMPILE_DEBUG)
@@ -22,7 +22,7 @@ endif
 
 HEADERS=$(wildcard *.h)
 SRCS=$(wildcard *.c)
-OBJS=$(addprefix obj/obj/linux/,$(patsubst %.c,%.o,$(SRCS)))
+OBJS=$(addprefix obj/obj/unix/,$(patsubst %.c,%.o,$(SRCS)))
 
 
 # Build Action
@@ -30,19 +30,19 @@ default:	build
 
 build:	$(OBJECTS_NATIVELIB) bin/lowether
 
-obj/obj/linux/nativelib.o: nativelib/nativelib_src/nativelib.c $(HEADERS_NATIVELIB)
-	@mkdir -p obj/obj/linux/
+obj/obj/unix/nativelib.o: nativelib/nativelib_src/nativelib.c $(HEADERS_NATIVELIB)
+	@mkdir -p obj/obj/unix/
 	@mkdir -p bin/
-	$(CC) $(OPTIONS_COMPILE) -c nativelib/nativelib_src/nativelib.c -o obj/obj/linux/nativelib.o
+	$(CC) $(OPTIONS_COMPILE) -c nativelib/nativelib_src/nativelib.c -o obj/obj/unix/nativelib.o
 
-obj/obj/linux/%.o: %.c
+obj/obj/unix/%.o: %.c
 	$(CC) $(OPTIONS_COMPILE) -c $< -o $@
 
-bin/lowether: obj/obj/linux/nativelib.o $(HEADERS_NATIVELIB) $(OBJECTS_NATIVELIB) $(OBJS)
-	$(CC) obj/obj/linux/nativelib.o $(OBJS) $(OPTIONS_LINK) -o bin/lowether
+bin/lowether: obj/obj/unix/nativelib.o $(HEADERS_NATIVELIB) $(OBJECTS_NATIVELIB) $(OBJS)
+	$(CC) obj/obj/unix/nativelib.o $(OBJS) $(OPTIONS_LINK) -o bin/lowether
 
 clean:
-	-rm -f obj/obj/linux/*.o
+	-rm -f obj/obj/unix/*.o
 	-rm -f bin/lowether
 
 help:
