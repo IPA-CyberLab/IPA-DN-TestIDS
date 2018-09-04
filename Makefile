@@ -15,8 +15,8 @@ HEADERS_NATIVELIB=nativelib/nativelib_src/nativelib.h
 OBJECTS_NATIVELIB=obj/obj/unix/nativelib.o
 
 ifeq ($(UNAME),Darwin)
-	OPTIONS_LINK_DEBUG += -lpcap
-	OPTIONS_LINK_RELEASE += -lpcap
+	OPTIONS_LINK_DEBUG += -lpcap -liconv
+	OPTIONS_LINK_RELEASE += -lpcap -liconv
 endif
 
 ifeq ($(UNAME),Linux)
