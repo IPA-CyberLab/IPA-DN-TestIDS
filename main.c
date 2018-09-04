@@ -142,9 +142,9 @@ void report_http_request(ETHERNET_HEADER *eth_header, IPV4_HDR *v4_header, TCP_H
 	sprintf(str_ip_dst, "%u.%u.%u.%u", a[0], a[1], a[2], a[3]);
 
 	// 画面に表示する
-	printf("[HTTP %s] %s:%u -> %s:%u\n", method, str_ip_src, Endian16(tcp_header->SrcPort), str_ip_dst, Endian16(tcp_header->DstPort));
-	printf("  %s\n", url);
-	printf("  VLAN ID: %u, eth_src: %s, eth_dst: %s\n", vlan_id, str_eth_src, str_eth_dst);
+	printf("[HTTP %s] %s:%u -> %s:%u ", method, str_ip_src, Endian16(tcp_header->SrcPort), str_ip_dst, Endian16(tcp_header->DstPort));
+	printf("VLAN ID: %u, eth_src: %s, eth_dst: %s ", vlan_id, str_eth_src, str_eth_dst);
+	printf("%s\n", url);
 }
 
 // 5. TCP の接続 / 切断をレポートする関数
@@ -171,8 +171,8 @@ void report_tcp_connect_or_disconnect(ETHERNET_HEADER *eth_header, IPV4_HDR *v4_
 	sprintf(str_ip_dst, "%u.%u.%u.%u", a[0], a[1], a[2], a[3]);
 
 	// 画面に表示する
-	printf("[%s] %s:%u -> %s:%u\n", op_type, str_ip_src, Endian16(tcp_header->SrcPort), str_ip_dst, Endian16(tcp_header->DstPort));
-	printf("  VLAN ID: %u, eth_src: %s, eth_dst: %s\n", vlan_id, str_eth_src, str_eth_dst);
+	printf("[%s] %s:%u -> %s:%u ", op_type, str_ip_src, Endian16(tcp_header->SrcPort), str_ip_dst, Endian16(tcp_header->DstPort));
+	printf("VLAN ID: %u, eth_src: %s, eth_dst: %s\n", vlan_id, str_eth_src, str_eth_dst);
 }
 
 // 4. TCP パケットを 1 つ受信した際に呼び出される偉大なる関数様
