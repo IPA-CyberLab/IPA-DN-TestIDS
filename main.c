@@ -196,18 +196,22 @@ void one_tcp_packet_is_received(ETHERNET_HEADER *eth_header, IPV4_HDR *v4_header
 				if ((tcp_header->Flag & TCP_FLAG_SYN) && !(tcp_header->Flag & TCP_FLAG_ACK))
 				{
 					// TCP の接続要求パケット (SYN) を受信したぞ。報告だ！
-					report_tcp_connect_or_disconnect(eth_header, v4_header, tcp_header, "TCP Connect Request", vlan_id);
+					report_tcp_connect_or_disconnect(eth_header, v4_header, tcp_header, "TCP SYN", vlan_id);
 				}
 				else if ((tcp_header->Flag & TCP_FLAG_SYN) && (tcp_header->Flag & TCP_FLAG_ACK))
 				{
 					// TCP の接続応答パケット (SYN ＋ACK) を受信したぞ。報告だ！
-					report_tcp_connect_or_disconnect(eth_header, v4_header, tcp_header, "TCP Connect Reply", vlan_id);
+					report_tcp_connect_or_disconnect(eth_header, v4_header, tcp_header, "TCP SYN+ACK", vlan_id);
 				}
-				else if ((tcp_header->Flag & TCP_FLAG_RST) || (tcp_header->Flag & TCP_FLAG_FIN))
+				else if (tcp_header->Flag & TCP_FLAG_RST)
 				{
-					// TCP の切断通知パケット (RST または FIN) を受信したぞ。報告だ！
-					// (本当は RST と FIN は挙動・性質が違うのであるが、ここでは手抜きをする)
-					report_tcp_connect_or_disconnect(eth_header, v4_header, tcp_header, "TCP Disconnect", vlan_id);
+					// TCP の切断通知パケット (RST) を受信したぞ。報告だ！
+					report_tcp_connect_or_disconnect(eth_header, v4_header, tcp_header, "TCP RST", vlan_id);
+				}
+				else if (tcp_header->Flag & TCP_FLAG_FIN)
+				{
+					// TCP の切断通知パケット (FIN) を受信したぞ。報告だ！
+					report_tcp_connect_or_disconnect(eth_header, v4_header, tcp_header, "TCP FIN", vlan_id);
 				}
 				else if (!(tcp_header->Flag & TCP_FLAG_SYN) && (tcp_header->Flag & TCP_FLAG_ACK))
 				{
