@@ -119,7 +119,7 @@ typedef struct TCP_HDR
 #endif	// OS_WIN32
 
 // 6. HTTP リクエストをレポートする関数
-void report_http_request(ETHERNET_HEADER *eth_header, IPV4_HDR *v4_header, TCP_HDR *tcp_header, char *method, char *url)
+void report_http_request(ETHERNET_HEADER *eth_header, IPV4_HDR *v4_header, TCP_HDR *tcp_header, char *method, char *url, UINT vlan_id)
 {
 	UCHAR *a;
 	char str_eth_src[20];
@@ -144,11 +144,11 @@ void report_http_request(ETHERNET_HEADER *eth_header, IPV4_HDR *v4_header, TCP_H
 	// 画面に表示する
 	printf("[HTTP %s] %s:%u -> %s:%u\n", method, str_ip_src, Endian16(tcp_header->SrcPort), str_ip_dst, Endian16(tcp_header->DstPort));
 	printf("  %s\n", url);
-	printf("  eth_src: %s, eth_dst: %s\n", str_eth_src, str_eth_dst);
+	printf("  VLAN ID: %u, eth_src: %s, eth_dst: %s\n", vlan_id, str_eth_src, str_eth_dst);
 }
 
 // 5. TCP の接続 / 切断をレポートする関数
-void report_tcp_connect_or_disconnect(ETHERNET_HEADER *eth_header, IPV4_HDR *v4_header, TCP_HDR *tcp_header, char *op_type)
+void report_tcp_connect_or_disconnect(ETHERNET_HEADER *eth_header, IPV4_HDR *v4_header, TCP_HDR *tcp_header, char *op_type, UINT vlan_id)
 {
 	UCHAR *a;
 	char str_eth_src[20];
@@ -172,11 +172,11 @@ void report_tcp_connect_or_disconnect(ETHERNET_HEADER *eth_header, IPV4_HDR *v4_
 
 	// 画面に表示する
 	printf("[%s] %s:%u -> %s:%u\n", op_type, str_ip_src, Endian16(tcp_header->SrcPort), str_ip_dst, Endian16(tcp_header->DstPort));
-	printf("  eth_src: %s, eth_dst: %s\n", str_eth_src, str_eth_dst);
+	printf("  VLAN ID: %u, eth_src: %s, eth_dst: %s\n", vlan_id, str_eth_src, str_eth_dst);
 }
 
 // 4. TCP パケットを 1 つ受信した際に呼び出される偉大なる関数様
-void one_tcp_packet_is_received(ETHERNET_HEADER *eth_header, IPV4_HDR *v4_header, UCHAR *buffer, UINT size)
+void one_tcp_packet_is_received(ETHERNET_HEADER *eth_header, IPV4_HDR *v4_header, UCHAR *buffer, UINT size, UINT vlan_id)
 {
 	// TCP ヘッダを分析いたします
 	if (size >= sizeof(TCP_HDR))
@@ -196,18 +196,18 @@ void one_tcp_packet_is_received(ETHERNET_HEADER *eth_header, IPV4_HDR *v4_header
 				if ((tcp_header->Flag & TCP_FLAG_SYN) && !(tcp_header->Flag & TCP_FLAG_ACK))
 				{
 					// TCP の接続要求パケット (SYN) を受信したぞ。報告だ！
-					report_tcp_connect_or_disconnect(eth_header, v4_header, tcp_header, "TCP Connect Request");
+					report_tcp_connect_or_disconnect(eth_header, v4_header, tcp_header, "TCP Connect Request", vlan_id);
 				}
 				else if ((tcp_header->Flag & TCP_FLAG_SYN) && (tcp_header->Flag & TCP_FLAG_ACK))
 				{
 					// TCP の接続応答パケット (SYN ＋ACK) を受信したぞ。報告だ！
-					report_tcp_connect_or_disconnect(eth_header, v4_header, tcp_header, "TCP Connect Reply");
+					report_tcp_connect_or_disconnect(eth_header, v4_header, tcp_header, "TCP Connect Reply", vlan_id);
 				}
 				else if ((tcp_header->Flag & TCP_FLAG_RST) || (tcp_header->Flag & TCP_FLAG_FIN))
 				{
 					// TCP の切断通知パケット (RST または FIN) を受信したぞ。報告だ！
 					// (本当は RST と FIN は挙動・性質が違うのであるが、ここでは手抜きをする)
-					report_tcp_connect_or_disconnect(eth_header, v4_header, tcp_header, "TCP Disconnect");
+					report_tcp_connect_or_disconnect(eth_header, v4_header, tcp_header, "TCP Disconnect", vlan_id);
 				}
 				else if (!(tcp_header->Flag & TCP_FLAG_SYN) && (tcp_header->Flag & TCP_FLAG_ACK))
 				{
@@ -288,7 +288,7 @@ void one_tcp_packet_is_received(ETHERNET_HEADER *eth_header, IPV4_HDR *v4_header
 									sprintf(url, "http://%s%s", host_header_value, request_path);
 									
 									// 報告だ !
-									report_http_request(eth_header, v4_header, tcp_header, method, url);
+									report_http_request(eth_header, v4_header, tcp_header, method, url, vlan_id);
 								}
 							}
 						}
@@ -302,6 +302,8 @@ void one_tcp_packet_is_received(ETHERNET_HEADER *eth_header, IPV4_HDR *v4_header
 // 3. Ethernet フレームを 1 つ受信した際に呼び出される偉大なる関数
 void one_ethernet_frame_is_received(UCHAR *buffer, UINT size)
 {
+	UINT vlan_id = 0;
+
 	// フレームサイズが 1518 バイトより大きいもの (Jumbo Frame) は無視する
 	// 1518 = MTU 1500 + DST_MAC 6 + SRC_MAC 6 + TPID 2 + TAG_VLAN 4
 	if (size > 1518) return;
@@ -320,7 +322,7 @@ void one_ethernet_frame_is_received(UCHAR *buffer, UINT size)
 			// IEEE802.1Q タグ VLAN パケットの場合、VLAN ID を読み取ってからタグを除去する
 			TAG_VLAN_HEADER *tag_header = (TAG_VLAN_HEADER *)buffer;
 			USHORT tag = Endian16(tag_header->Tag);
-			USHORT vlan_id = tag & 0xFFF;
+			vlan_id = tag & 0xFFF;
 			tpid = Endian16(tag_header->Protocol);
 
 			buffer += sizeof(TAG_VLAN_HEADER);
@@ -361,7 +363,7 @@ void one_ethernet_frame_is_received(UCHAR *buffer, UINT size)
 										if (ipv4_hdr->Protocol == IPV4_PROTO_TCP)
 										{
 											// あっ！ これは TCP パケットだな。よっし TCP パケットを処理する関数を呼び出してやろう。丸投げや！
-											one_tcp_packet_is_received(eth_header, ipv4_hdr, buffer, size);
+											one_tcp_packet_is_received(eth_header, ipv4_hdr, buffer, size, vlan_id);
 										}
 									}
 								}
@@ -416,14 +418,14 @@ void main_loop_thread(THREAD *thread, void *param)
 // 1. C 言語でおなじみの main() 関数様
 int main(int argc, char *argv[])
 {
-	char if_name[MAX_SIZE];
+	char if_name[256] = { 0 };
 
-	SetHamMode(); InitMayaqua(false, true, argc, argv);
-	InitCedar(); InitEth();
+	SetHamMode();
+	InitMayaqua(false, false, argc, argv);
+	InitCedar();
+	InitEth();
 
-	Print("IPA-DN-TestIDS Sample C Program by Daiyuu Nobori\n");
-
-	Zero(if_name, sizeof(if_name));
+	Print("IPA-DN-TestIDS Sample C Program (Inchiki)\n");
 
 	if (argc >= 2) StrCpy(if_name, sizeof(if_name), argv[1]);
 	
@@ -480,19 +482,10 @@ int main(int argc, char *argv[])
 		{
 			MAIN_LOOP_THREAD_PARAM p;
 			THREAD *thread;
-			char mac_address_str[MAX_SIZE];
 
 			Zero(&p, sizeof(p));
 			p.Eth = eth;
 			p.Cancel = p.Eth->Cancel;
-
-			Rand(p.MyRandomMacAddress, 6);
-			p.MyRandomMacAddress[0] = 0x00;
-			p.MyRandomMacAddress[1] = 0xAC;
-
-			MacToStr(mac_address_str, sizeof(mac_address_str), p.MyRandomMacAddress);
-
-			Print("MyRandomMacAddress: %s\n", mac_address_str);
 
 			AddRef(p.Cancel->ref);
 
