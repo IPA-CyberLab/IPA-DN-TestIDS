@@ -42,7 +42,7 @@ typedef struct ETHERNET_HEADER
 	UCHAR	DestAddress[6];			// Source MAC address
 	UCHAR	SrcAddress[6];			// Destination MAC address
 	USHORT	Protocol;				// Protocol
-} ETHERNET_HEADER GCC_PACKED;
+} GCC_PACKED ETHERNET_HEADER;
 
 // TPID の値
 #define	TPID_PROTO_ARPV4		0x0806	// ARPv4
@@ -55,7 +55,7 @@ typedef struct TAG_VLAN_HEADER
 {
 	USHORT Tag;
 	USHORT Protocol;
-} TAG_VLAN_HEADER GCC_PACKED;
+} GCC_PACKED TAG_VLAN_HEADER;
 
 // IPv4 ヘッダ
 typedef struct IPV4_HDR
@@ -70,7 +70,7 @@ typedef struct IPV4_HDR
 	USHORT	Checksum;					// Checksum
 	UINT	SrcIP;						// Source IP address
 	UINT	DstIP;						// Destination IP address
-} IPV4_HDR GCC_PACKED;
+} GCC_PACKED IPV4_HDR;
 
 // IPv4 ヘッダの分析のための便利なマクロ
 #define	IP_V4_GET_VERSION(h)			(((h)->VersionAndHeaderLength >> 4 & 0x0f))
@@ -100,7 +100,7 @@ typedef struct TCP_HDR
 	USHORT	WindowSize;				// Window size
 	USHORT	Checksum;				// Checksum
 	USHORT	UrgentPointer;			// Urgent Pointer
-} TCP_HDR GCC_PACKED;
+} GCC_PACKED TCP_HDR;
 
 // TCP ヘッダの分析のための便利なマクロ
 #define	TCP_HDR_GET_HEADER_SIZE(h)	(((h)->HeaderSizeAndReserved >> 4) & 0x0f)
@@ -233,9 +233,10 @@ void one_tcp_packet_is_received(ETHERNET_HEADER *eth_header, IPV4_HDR *v4_header
 								char *method = NULL;
 								char host_header_value[2000] = { 0 };
 								char request_path[2000] = { 0 };
+								int i;
 
 								// 手抜きコード 改行コードごとに分割して 1 行抜き出す
-								for (int i = 0; i < len; i++)
+								for (i = 0; i < len; i++)
 								{
 									char c = safe_str[i];
 									char tmp[2000] = { 0 };
@@ -250,6 +251,7 @@ void one_tcp_packet_is_received(ETHERNET_HEADER *eth_header, IPV4_HDR *v4_header
 											if (n == 0)
 											{
 												int skip_len = 0;
+												int i;
 												// 1 行目は GET とかになっているはず
 												if (memcmp(tmp, "GET ", 4) == 0)
 												{
@@ -263,7 +265,7 @@ void one_tcp_packet_is_received(ETHERNET_HEADER *eth_header, IPV4_HDR *v4_header
 												}
 												strcpy(request_path, &tmp[skip_len]);
 												// HTTP バージョン番号文字列は目障りなので消してやる
-												for (int i = 0; i < strlen(request_path); i++)
+												for (i = 0; i < strlen(request_path); i++)
 													if (request_path[i] == ' ') request_path[i] = 0;
 											}
 											else
