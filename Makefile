@@ -1,16 +1,28 @@
 # Makefile
 
+UNAME := $(shell uname)
+
 OPTIONS_COMPILE_DEBUG=-D_DEBUG -DDEBUG -D_REENTRANT -DREENTRANT -D_THREAD_SAFE -D_THREADSAFE -DTHREAD_SAFE -DTHREADSAFE -D_FILE_OFFSET_BITS=64 -I./nativelib/nativelib_src/ -I/usr/local/opt/openssl/include -g -fsigned-char
 
-OPTIONS_LINK_DEBUG=-g -fsigned-char -lm -ldl -lrt -lpthread -lssl -lcrypto -lreadline -lncurses -lz
+OPTIONS_LINK_DEBUG=-g -fsigned-char -lm -lpthread -lssl -lcrypto -lreadline -lncurses -lz
 
 OPTIONS_COMPILE_RELEASE=-DNDEBUG -DVPN_SPEED -D_REENTRANT -DREENTRANT -D_THREAD_SAFE -D_THREADSAFE -DTHREAD_SAFE -DTHREADSAFE -D_FILE_OFFSET_BITS=64 -I./nativelib/nativelib_src/ -I/usr/local/opt/openssl/include -O2 -fsigned-char
 
-OPTIONS_LINK_RELEASE=-O2 -fsigned-char -lm -ldl -lrt -lpthread -lssl -lcrypto -lreadline -lncurses -lz
+OPTIONS_LINK_RELEASE=-O2 -fsigned-char -lm -lpthread -lssl -lcrypto -lreadline -lncurses -lz
 
 HEADERS_NATIVELIB=nativelib/nativelib_src/nativelib.h
 
 OBJECTS_NATIVELIB=obj/obj/unix/nativelib.o
+
+ifeq ($(UNAME),Darwin)
+	OPTIONS_LINK_DEBUG += -lpcap
+	OPTIONS_LINK_RELEASE += -lpcap
+endif
+
+ifeq ($(UNAME),Linux)
+	OPTIONS_LINK_DEBUG += -ldl -lrt
+	OPTIONS_LINK_RELEASE += -ldl -lrt
+endif
 
 ifeq ($(DEBUG),YES)
 	OPTIONS_COMPILE=$(OPTIONS_COMPILE_DEBUG)
