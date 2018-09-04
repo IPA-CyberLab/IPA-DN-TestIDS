@@ -429,7 +429,9 @@ int main(int argc, char *argv[])
 	InitCedar();
 	InitEth();
 
-	Print("IPA-DN-TestIDS Sample C Program (Inchiki)\n");
+	Print("IPA-DN-TestIDS Sample C Program (Inchiki Tenuki)\n");
+	Print("Copyright (c) 2018 IPA ICSCoE Cyber-Lab\n");
+	Print("\n");
 
 	if (argc >= 2) StrCpy(if_name, sizeof(if_name), argv[1]);
 	
@@ -439,31 +441,40 @@ int main(int argc, char *argv[])
 		TOKEN_LIST *t = GetEthList();
 		UINT i;
 
-		Print("--- List of available Ethernet adapters ---\n");
-
-		for (i = 0;i < t->NumTokens;i++)
+		if (t->NumTokens == 0)
 		{
-			char *eth_name = t->Token[i];
-			wchar_t tmp2[MAX_SIZE];
-			char tmp[MAX_SIZE];
-			
-			Zero(tmp, sizeof(tmp));
-			Zero(tmp2, sizeof(tmp2));
+			Print("Failed to open the low-level Ethernet API.\n");
+			Print("You must run this program with the root privilege.\n");
+			Print("Use sudo to run this program.\n");
+		}
+		else
+		{
+			Print("--- List of available Ethernet adapters ---\n");
+
+			for (i = 0;i < t->NumTokens;i++)
+			{
+				char *eth_name = t->Token[i];
+				wchar_t tmp2[MAX_SIZE];
+				char tmp[MAX_SIZE];
+
+				Zero(tmp, sizeof(tmp));
+				Zero(tmp2, sizeof(tmp2));
 
 #ifdef OS_UNIX
-			EthGetInterfaceDescriptionUnix(eth_name, tmp, sizeof(tmp));
-			StrToUni(tmp2, sizeof(tmp2), tmp);
+				EthGetInterfaceDescriptionUnix(eth_name, tmp, sizeof(tmp));
+				StrToUni(tmp2, sizeof(tmp2), tmp);
 #else  // OS_UNIX
-			GetEthNetworkConnectionName(tmp2, sizeof(tmp2), eth_name);
+				GetEthNetworkConnectionName(tmp2, sizeof(tmp2), eth_name);
 #endif // OS_UNIX
 
-			if (UniIsEmptyStr(tmp2) == false)
-			{
-				UniPrint(L"NIC #%u: %S\n  description: %s\n", i, eth_name, tmp2);
-			}
-			else
-			{
-				UniPrint(L"name: %S\n", eth_name);
+				if (UniIsEmptyStr(tmp2) == false)
+				{
+					UniPrint(L"NIC #%u: %S\n  description: %s\n", i, eth_name, tmp2);
+				}
+				else
+				{
+					UniPrint(L"name: %S\n", eth_name);
+				}
 			}
 		}
 
