@@ -38,6 +38,7 @@
 
 // インチキ関数 (大文字・小文字を区別せずに文字列比較)
 // http://www.c-tipsref.com/reference/ctype/toupper.html からもらってきた。もらいっこ。
+// (C) Copyright 2010, C言語関数辞典 - Created by Kojo Sugita
 int strcmp_ignorecase(const char *s1, const char *s2) {
 	int i = 0;
 
