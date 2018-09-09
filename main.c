@@ -1,3 +1,20 @@
+//
+// IPA 産業サイバーセキュリティセンター サイバー技術研究室 特別講義 (2018/9/18 1 限目)
+// 講義利用サンプルコード (C 言語)
+// 「IPA-DN-TestIDS」 by Inchiki Tenuki
+// Copyright (c) 2018 IPA ICSCoE Cyber-Lab
+// 
+// 取扱い: TLP なし (秘密情報なし)
+// 作者: Inchiki Tenuki 氏 (≓ Daiyuu Nobori)
+// 
+// 動作環境: なんと 以下の 3 OS で動作いたします。
+// - Windows, Linux, macOS
+// 
+// Windows: Visual Studio 2017 と winpcap が必要
+// Linux および macOS: gcc および OpenSSL が必要
+
+
+// C 言語のおなじみの include 集
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -8,6 +25,13 @@
 #include <time.h>
 #include <errno.h>
 
+// この nativelib というのは、手抜きライブラリであり、Inchiki Tenuki 氏が過去に作成したものを
+// 大変いい加減にコンパイルしやすいように 1 つの C 言語ソースに無理やりまとめたものである。
+// モダンなプログラミング言語におけるライブラリのようなものであるが、
+// なんと nativelib.c 1 ファイルだけで 28 万行 (約 6MB) もあり、
+// 可読性は全く考慮されていないのである。
+// しかしながら、このライブラリのおかげで、Windows、Linux、macOS で色々な処理を共通して
+// 書くことができるようになっている。
 #include <nativelib.h>
 
 #include "lowether.h"
@@ -28,6 +52,7 @@ int strcmp_ignorecase(const char *s1, const char *s2) {
 	return toupper((unsigned char)s1[i]) - toupper((unsigned char)s2[i]);
 }
 
+// 構造体のパディングを無効にする
 #ifdef	OS_WIN32
 #pragma pack(push, 1)
 #endif	// OS_WIN32
@@ -37,20 +62,23 @@ int strcmp_ignorecase(const char *s1, const char *s2) {
 // --------------------------------------
 
 // Ethernet ヘッダ
+// 参考: https://en.wikipedia.org/wiki/Ethernet_frame
 typedef struct ETHERNET_HEADER
 {
 	UCHAR	DestAddress[6];			// Source MAC address
 	UCHAR	SrcAddress[6];			// Destination MAC address
-	USHORT	Protocol;				// Protocol
+	USHORT	Protocol;				// Protocol (=TPID)
 } GCC_PACKED ETHERNET_HEADER;
 
 // TPID の値
+// 参考: https://en.wikipedia.org/wiki/EtherType
 #define	TPID_PROTO_ARPV4		0x0806	// ARPv4
 #define	TPID_PROTO_IPV4			0x0800	// IPv4
 #define	TPID_PROTO_IPV6			0x86dd	// IPv6
 #define	TPID_PROTO_TAGVLAN		0x8100	// IEEE802.1Q タグ付き VLAN
 
 // IEEE802.1Q タグ VLAN ヘッダ
+// 参考: https://en.wikipedia.org/wiki/IEEE_802.1Q
 typedef struct TAG_VLAN_HEADER
 {
 	USHORT Tag;
@@ -58,6 +86,7 @@ typedef struct TAG_VLAN_HEADER
 } GCC_PACKED TAG_VLAN_HEADER;
 
 // IPv4 ヘッダ
+// 参考: https://en.wikipedia.org/wiki/IPv4#Header
 typedef struct IPV4_HDR
 {
 	UCHAR	VersionAndHeaderLength;		// Version and header size
@@ -72,23 +101,23 @@ typedef struct IPV4_HDR
 	UINT	DstIP;						// Destination IP address
 } GCC_PACKED IPV4_HDR;
 
-// IPv4 ヘッダの分析のための便利なマクロ
+// IPv4 ヘッダの分析のための便利な手抜きマクロ
 #define	IP_V4_GET_VERSION(h)			(((h)->VersionAndHeaderLength >> 4 & 0x0f))
 #define	IP_V4_SET_VERSION(h, v)		((h)->VersionAndHeaderLength |= (((v) & 0x0f) << 4))
 #define	IP_V4_GET_HEADER_LEN(h)		((h)->VersionAndHeaderLength & 0x0f)
 #define	IP_V4_SET_HEADER_LEN(h, v)	((h)->VersionAndHeaderLength |= ((v) & 0x0f))
-
-// Macro for IPv4 fragment related operation
 #define	IP_V4_GET_FLAGS(h)			(((h)->FlagsAndFlagmentOffset[0] >> 5) & 0x07)
 #define	IP_V4_SET_FLAGS(h, v)		((h)->FlagsAndFlagmentOffset[0] |= (((v) & 0x07) << 5))
 #define	IP_V4_GET_OFFSET(h)			(((h)->FlagsAndFlagmentOffset[0] & 0x1f) * 256 + ((h)->FlagsAndFlagmentOffset[1]))
 #define	IP_V4_SET_OFFSET(h, v)		{(h)->FlagsAndFlagmentOffset[0] |= (UCHAR)((v) / 256); (h)->FlagsAndFlagmentOffset[1] = (UCHAR)((v) % 256);}
 
 // IPv4 上で動作する L4 以上のプロトコルのプロトコル番号
+// 参考: https://www.iana.org/assignments/protocol-numbers/protocol-numbers.xhtml
 #define	IPV4_PROTO_TCP		0x06	// TCP protocol
 #define	IPV4_PROTO_UDP		0x11	// UDP protocol
 
 // TCP ヘッダ
+// 参考: https://en.wikipedia.org/wiki/Transmission_Control_Protocol
 typedef struct TCP_HDR
 {
 	USHORT	SrcPort;					// Source port number
@@ -114,11 +143,12 @@ typedef struct TCP_HDR
 #define	TCP_FLAG_ACK						16
 #define	TCP_FLAG_URG						32
 
+// パディングを有効に戻す
 #ifdef	OS_WIN32
 #pragma pack(pop)
 #endif	// OS_WIN32
 
-// 6. HTTP リクエストをレポートする関数
+// 6. HTTP リクエストをレポートする手抜き関数
 void report_http_request(ETHERNET_HEADER *eth_header, IPV4_HDR *v4_header, TCP_HDR *tcp_header, char *method, char *url, UINT vlan_id)
 {
 	UCHAR *a;
@@ -147,7 +177,7 @@ void report_http_request(ETHERNET_HEADER *eth_header, IPV4_HDR *v4_header, TCP_H
 	printf("%s\n", url);
 }
 
-// 5. TCP の接続 / 切断をレポートする関数
+// 5. TCP の接続 / 切断をレポートする手抜き関数
 void report_tcp_connect_or_disconnect(ETHERNET_HEADER *eth_header, IPV4_HDR *v4_header, TCP_HDR *tcp_header, char *op_type, UINT vlan_id)
 {
 	UCHAR *a;
@@ -242,6 +272,8 @@ void one_tcp_packet_is_received(ETHERNET_HEADER *eth_header, IPV4_HDR *v4_header
 									char tmp[2000] = { 0 };
 									if (c == '\r' || c == '\n')
 									{
+										// 本当は strcpy なんか使ってはいけませンよ!
+										// しかしこのケースでは入力文字列の最大長が限定されるので一応は安全なのでよい
 										strcpy(tmp, &safe_str[newline_start_pos]);
 										tmp[i - newline_start_pos] = 0;
 										newline_start_pos = i + 1;
@@ -263,6 +295,8 @@ void one_tcp_packet_is_received(ETHERNET_HEADER *eth_header, IPV4_HDR *v4_header
 													method = "POST";
 													skip_len = 5;
 												}
+												// 本当は strcpy なんか使ってはいけませンよ!
+												// しかしこのケースでは入力文字列の最大長が限定されるので一応は安全なのでよい
 												strcpy(request_path, &tmp[skip_len]);
 												// HTTP バージョン番号文字列は目障りなので消してやる
 												for (i = 0; i < strlen(request_path); i++)
@@ -278,6 +312,8 @@ void one_tcp_packet_is_received(ETHERNET_HEADER *eth_header, IPV4_HDR *v4_header
 													// HOST: ヘッダらしき先頭文字を発見した。値を取得する
 													char *s = &tmp[5];
 													while (*s == ' ') s++;
+													// 本当は strcpy なんか使ってはいけませンよ!
+													// しかしこのケースでは入力文字列の最大長が限定されるので一応は安全なのでよい
 													strcpy(host_header_value, s);
 												}
 											}
@@ -291,6 +327,7 @@ void one_tcp_packet_is_received(ETHERNET_HEADER *eth_header, IPV4_HDR *v4_header
 								{
 									// URL を組立てる
 									char url[2000];
+									// あっ危険な sprintf 関数だ！まったくけしからんな
 									sprintf(url, "http://%s%s", host_header_value, request_path);
 									
 									// 報告だ !
