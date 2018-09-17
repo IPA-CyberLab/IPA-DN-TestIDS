@@ -2,11 +2,11 @@
 
 UNAME := $(shell uname)
 
-OPTIONS_COMPILE_DEBUG=-D_DEBUG -DDEBUG -D_REENTRANT -DREENTRANT -D_THREAD_SAFE -D_THREADSAFE -DTHREAD_SAFE -DTHREADSAFE -D_FILE_OFFSET_BITS=64 -I./nativelib/nativelib_src/ -I/usr/local/opt/openssl/include -g -fsigned-char
+OPTIONS_COMPILE_DEBUG=-D_DEBUG -DDEBUG -D_REENTRANT -DREENTRANT -D_THREAD_SAFE -D_THREADSAFE -DTHREAD_SAFE -DTHREADSAFE -D_FILE_OFFSET_BITS=64 -I./nativelib/nativelib_src/ -I/usr/local/opt/openssl/include -I /opt/local/include/ -g -fsigned-char
 
 OPTIONS_LINK_DEBUG=-g -fsigned-char -lm -lpthread -lssl -lcrypto -lreadline -lncurses -lz
 
-OPTIONS_COMPILE_RELEASE=-DNDEBUG -DVPN_SPEED -D_REENTRANT -DREENTRANT -D_THREAD_SAFE -D_THREADSAFE -DTHREAD_SAFE -DTHREADSAFE -D_FILE_OFFSET_BITS=64 -I./nativelib/nativelib_src/ -I/usr/local/opt/openssl/include -O2 -fsigned-char
+OPTIONS_COMPILE_RELEASE=-DNDEBUG -DVPN_SPEED -D_REENTRANT -DREENTRANT -D_THREAD_SAFE -D_THREADSAFE -DTHREAD_SAFE -DTHREADSAFE -D_FILE_OFFSET_BITS=64 -I./nativelib/nativelib_src/ -I/usr/local/opt/openssl/include -I /opt/local/include/ -O2 -fsigned-char
 
 OPTIONS_LINK_RELEASE=-O2 -fsigned-char -lm -lpthread -lssl -lcrypto -lreadline -lncurses -lz
 
