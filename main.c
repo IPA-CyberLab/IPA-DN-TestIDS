@@ -149,6 +149,9 @@ typedef struct TCP_HDR
 #pragma pack(pop)
 #endif	// OS_WIN32
 
+// 手抜きパケット番号
+UINT current_packet_number = 0;
+
 // 6. HTTP リクエストをレポートする手抜き関数
 void report_http_request(ETHERNET_HEADER *eth_header, IPV4_HDR *v4_header, TCP_HDR *tcp_header, char *method, char *url, UINT vlan_id)
 {
@@ -157,6 +160,10 @@ void report_http_request(ETHERNET_HEADER *eth_header, IPV4_HDR *v4_header, TCP_H
 	char str_eth_dst[20];
 	char str_ip_src[20];
 	char str_ip_dst[20];
+	SYSTEMTIME time;
+
+	// 現在時刻を取得
+	LocalTime(&time);
 
 	// Ethernet の送信元 / 宛先 MAC アドレスを文字列に変換する
 	// ※ sprintf 関数は非推奨であるが、手抜きで使っている。生成される文字列長が確定している場合は危険はない。
@@ -173,7 +180,10 @@ void report_http_request(ETHERNET_HEADER *eth_header, IPV4_HDR *v4_header, TCP_H
 	sprintf(str_ip_dst, "%u.%u.%u.%u", a[0], a[1], a[2], a[3]);
 
 	// 画面に表示する
-	printf("[HTTP %s] %s:%u -> %s:%u ", method, str_ip_src, Endian16(tcp_header->SrcPort), str_ip_dst, Endian16(tcp_header->DstPort));
+	printf("Packet #%u (%u:%u:%u): [HTTP %s] %s:%u -> %s:%u ",
+		current_packet_number,
+		time.wHour, time.wMinute, time.wSecond, 
+		method, str_ip_src, Endian16(tcp_header->SrcPort), str_ip_dst, Endian16(tcp_header->DstPort));
 	printf("VLAN ID: %u, eth_src: %s, eth_dst: %s ", vlan_id, str_eth_src, str_eth_dst);
 	printf("%s\n", url);
 }
@@ -186,6 +196,11 @@ void report_tcp_connect_or_disconnect(ETHERNET_HEADER *eth_header, IPV4_HDR *v4_
 	char str_eth_dst[20];
 	char str_ip_src[20];
 	char str_ip_dst[20];
+	SYSTEMTIME time;
+
+	// 現在時刻を取得
+	// ほん
+	LocalTime(&time);
 
 	// Ethernet の送信元 / 宛先 MAC アドレスを文字列に変換する
 	// ※ sprintf 関数は非推奨であるが、手抜きで使っている。生成される文字列長が確定している場合は危険はない。
@@ -202,7 +217,10 @@ void report_tcp_connect_or_disconnect(ETHERNET_HEADER *eth_header, IPV4_HDR *v4_
 	sprintf(str_ip_dst, "%u.%u.%u.%u", a[0], a[1], a[2], a[3]);
 
 	// 画面に表示する
-	printf("[%s] %s:%u -> %s:%u ", op_type, str_ip_src, Endian16(tcp_header->SrcPort), str_ip_dst, Endian16(tcp_header->DstPort));
+	printf("Packet #%u (%u:%u:%u): [%s] %s:%u -> %s:%u ",
+		current_packet_number,
+		time.wHour, time.wMinute, time.wSecond,
+		op_type, str_ip_src, Endian16(tcp_header->SrcPort), str_ip_dst, Endian16(tcp_header->DstPort));
 	printf("VLAN ID: %u, eth_src: %s, eth_dst: %s\n", vlan_id, str_eth_src, str_eth_dst);
 }
 
@@ -347,6 +365,8 @@ void one_tcp_packet_is_received(ETHERNET_HEADER *eth_header, IPV4_HDR *v4_header
 void one_ethernet_frame_is_received(UCHAR *buffer, UINT size)
 {
 	UINT vlan_id = 0;
+
+	current_packet_number++;
 
 	// フレームサイズが 1518 バイトより大きいもの (Jumbo Frame) は無視する
 	// 1518 = MTU 1500 + DST_MAC 6 + SRC_MAC 6 + TPID 2 + TAG_VLAN 4
