@@ -162,7 +162,7 @@ void report_http_request(ETHERNET_HEADER *eth_header, IPV4_HDR *v4_header, TCP_H
 	char str_ip_dst[20];
 	SYSTEMTIME time;
 
-	// 現在時刻を取得
+	// 現在時刻を取得 (手抜き。本当はキャプチャした瞬間の時刻を取得するべきである)
 	LocalTime(&time);
 
 	// Ethernet の送信元 / 宛先 MAC アドレスを文字列に変換する
@@ -180,7 +180,7 @@ void report_http_request(ETHERNET_HEADER *eth_header, IPV4_HDR *v4_header, TCP_H
 	sprintf(str_ip_dst, "%u.%u.%u.%u", a[0], a[1], a[2], a[3]);
 
 	// 画面に表示する
-	printf("Packet #%u (%u:%u:%u): [HTTP %s] %s:%u -> %s:%u ",
+	printf("Packet #%u (%02u:%02u:%02u): [HTTP %s] %s:%u -> %s:%u ",
 		current_packet_number,
 		time.wHour, time.wMinute, time.wSecond, 
 		method, str_ip_src, Endian16(tcp_header->SrcPort), str_ip_dst, Endian16(tcp_header->DstPort));
@@ -198,8 +198,7 @@ void report_tcp_connect_or_disconnect(ETHERNET_HEADER *eth_header, IPV4_HDR *v4_
 	char str_ip_dst[20];
 	SYSTEMTIME time;
 
-	// 現在時刻を取得
-	// ほん
+	// 現在時刻を取得 (手抜き。本当はキャプチャした瞬間の時刻を取得するべきである)
 	LocalTime(&time);
 
 	// Ethernet の送信元 / 宛先 MAC アドレスを文字列に変換する
@@ -217,7 +216,7 @@ void report_tcp_connect_or_disconnect(ETHERNET_HEADER *eth_header, IPV4_HDR *v4_
 	sprintf(str_ip_dst, "%u.%u.%u.%u", a[0], a[1], a[2], a[3]);
 
 	// 画面に表示する
-	printf("Packet #%u (%u:%u:%u): [%s] %s:%u -> %s:%u ",
+	printf("Packet #%u (%02u:%02u:%02u): [%s] %s:%u -> %s:%u ",
 		current_packet_number,
 		time.wHour, time.wMinute, time.wSecond,
 		op_type, str_ip_src, Endian16(tcp_header->SrcPort), str_ip_dst, Endian16(tcp_header->DstPort));
